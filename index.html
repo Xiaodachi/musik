@@ -88,7 +88,6 @@
     align-items: flex-end;
   }
 
-  /* Title row */
   .meta {
     display: flex;
     align-items: center;
@@ -111,7 +110,6 @@
   .like:not(.on) { background: transparent; border: 2px solid var(--muted); }
   .like:not(.on) svg { display: none; }
 
-  /* Progress */
   .progress { margin-top: 18px; }
   .progress input[type=range] {
     -webkit-appearance: none; appearance: none;
@@ -160,15 +158,6 @@
   .extras .right { display: flex; gap: 12px; }
   .extras .icon-btn svg { width: 26px; height: 26px; }
 
-  .menu {
-    position: absolute; top: 64px; right: 20px; z-index: 5;
-    background: #2a2f35; border-radius: 12px; padding: 6px;
-    box-shadow: 0 12px 30px rgba(0,0,0,.45);
-    min-width: 240px;
-  }
-  .menu[hidden] { display: none; }
-  .menu button { display: block; width: 100%; text-align: left; padding: 12px 14px; border-radius: 8px; font-size: 15px; }
-  .menu button:hover { background: rgba(255,255,255,.08); }
   .toast {
     position: absolute; left: 50%; bottom: 24px; transform: translate(-50%, 20px);
     background: #fff; color: #111; padding: 10px 16px; border-radius: 10px;
@@ -192,24 +181,18 @@
       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M3 8l9 9 9-9"/></svg>
     </button>
     <div class="ctx">Memainkan dari Playlist<b>LuminoX</b></div>
-    <button class="icon-btn" id="menuBtn" aria-label="Menu lainnya" aria-haspopup="true">
+    <button class="icon-btn" aria-label="Menu lainnya">
       <svg viewBox="0 0 24 24" fill="currentColor"><circle cx="12" cy="5" r="1.8"/><circle cx="12" cy="12" r="1.8"/><circle cx="12" cy="19" r="1.8"/></svg>
     </button>
   </header>
 
-  <div class="menu" id="menu" hidden>
-    <button id="pickBtn">Pilih file musik dari perangkat</button>
-    <button id="coverBtn">Ganti gambar sampul</button>
-    <button id="lyricBtn">Atur teks lirik</button>
-  </div>
-
-  <button class="cover" id="cover" aria-label="Ganti gambar sampul">
+  <div class="cover" id="cover">
     <img id="coverImg" alt="Sampul album">
     <span class="empty-cover">
       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="16" rx="2.5"/><circle cx="9" cy="10" r="1.8"/><path d="M21 16l-5-5-8 9"/></svg>
-      Ketuk untuk memasang gambar sampul
+      Gambar sampul belum ada
     </span>
-  </button>
+  </div>
 
   <p class="lyric" id="lyric" aria-live="polite"></p>
 
@@ -263,8 +246,6 @@
 
   <div class="toast" id="toast" role="status"></div>
   <audio id="audio" preload="metadata"></audio>
-  <input type="file" id="file" accept="audio/*" multiple hidden>
-  <input type="file" id="coverFile" accept="image/*" hidden>
 </main>
 
 <script>
@@ -308,7 +289,7 @@
 
   function play() {
     audio.play().catch(() => {
-      toast("File musik tidak ditemukan. Pilih file lewat menu ⋮");
+      toast("File musik tidak ditemukan. Pastikan nama file sesuai");
       player.classList.remove("playing");
     });
   }
@@ -385,49 +366,7 @@
     coverImg.onerror = () => cover.classList.remove("has-image");
     coverImg.src = src;
   }
-  cover.onclick = () => $("coverFile").click();
-  $("coverBtn").onclick = () => $("coverFile").click();
-  $("coverFile").addEventListener("change", e => {
-    const f = e.target.files[0];
-    if (!f) return;
-    setCover(URL.createObjectURL(f));
-    toast("Gambar sampul dipasang");
-    e.target.value = "";
-  });
   setCover(DEFAULT_COVER);
-
-  /* Menu */
-  const menu = $("menu");
-  $("menuBtn").onclick = e => { e.stopPropagation(); menu.hidden = !menu.hidden; };
-  document.addEventListener("click", () => menu.hidden = true);
-  $("pickBtn").onclick = () => $("file").click();
-
-  $("file").addEventListener("change", e => {
-    const files = [...e.target.files];
-    if (!files.length) return;
-    const first = playlist.length;
-    files.forEach(f => playlist.push({
-      title: f.name.replace(/\.[^.]+$/, ""),
-      artist: "File lokal",
-      src: URL.createObjectURL(f),
-      lyrics: []
-    }));
-    if (playlist[0].src === "musik.mp3" && audio.paused) { playlist.splice(0, 1); load(0, true); }
-    else load(first - (playlist[0].src === "musik.mp3" ? 0 : 0), true);
-    toast(files.length + " lagu ditambahkan");
-  });
-
-  $("lyricBtn").onclick = () => {
-    const cur = playlist[index].lyrics.map(l => fmt(l.t).padStart(4, "0") + " " + l.text).join("\n");
-    const input = prompt("Tempel lirik dengan format per baris:\nmm:ss teks lirik\n\nContoh:\n0:11 baris pertama\n0:18 baris kedua", cur);
-    if (input === null) return;
-    playlist[index].lyrics = input.split("\n").map(line => {
-      const m = line.match(/^\s*(\d+):(\d{2})\s+(.*)$/);
-      return m ? { t: (+m[1]) * 60 + (+m[2]), text: m[3] } : null;
-    }).filter(Boolean).sort((a, b) => a.t - b.t);
-    renderLyric(audio.currentTime);
-    toast(playlist[index].lyrics.length ? "Lirik disimpan" : "Lirik dikosongkan");
-  };
 
   function renderLyric(time) {
     const ly = playlist[index].lyrics, el = $("lyric");
