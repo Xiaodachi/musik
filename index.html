@@ -1,0 +1,447 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="color-scheme" content="dark">
+<title>Masalah Masa Depan – Hindia</title>
+<style>
+  :root {
+    --bg-top: #4a6f8a;
+    --bg-mid: #2b3d4d;
+    --bg-bottom: #12161b;
+    --text: #ffffff;
+    --muted: #a9b3bb;
+    --green: #1ed760;
+    --track: #6f7f8c;
+    --lyrics-card: #0e4a78;
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; -webkit-tap-highlight-color: transparent; }
+  html, body { height: 100%; }
+  body {
+    font-family: "Segoe UI", system-ui, -apple-system, Roboto, "Helvetica Neue", Arial, sans-serif;
+    background: #0a0d10;
+    color: var(--text);
+    display: flex;
+    justify-content: center;
+  }
+  button { font: inherit; color: inherit; background: none; border: 0; cursor: pointer; }
+  button:focus-visible, input:focus-visible { outline: 2px solid #fff; outline-offset: 3px; border-radius: 8px; }
+
+  .player {
+    width: 100%;
+    max-width: 430px;
+    min-height: 100dvh;
+    padding: 18px 24px 0;
+    background: linear-gradient(180deg, var(--bg-top) 0%, var(--bg-mid) 45%, var(--bg-bottom) 85%);
+    display: flex;
+    flex-direction: column;
+    position: relative;
+    overflow-x: hidden;
+    padding-bottom: 28px;
+  }
+
+  .top {
+    display: grid;
+    grid-template-columns: 44px 1fr 44px;
+    align-items: center;
+    text-align: center;
+    margin-bottom: 26px;
+  }
+  .top .ctx { font-size: 13px; line-height: 1.3; }
+  .top .ctx b { display: block; font-size: 16px; font-weight: 700; }
+  .icon-btn { width: 44px; height: 44px; display: grid; place-items: center; }
+  .icon-btn svg { width: 28px; height: 28px; }
+
+  .cover {
+    display: block;
+    flex: none;
+    width: 100%;
+    aspect-ratio: 1 / 1;
+    border-radius: 10px;
+    overflow: hidden;
+    position: relative;
+    background: linear-gradient(145deg, #3d5a73, #24323f);
+    box-shadow: 0 18px 40px rgba(0,0,0,.35);
+    transition: transform .35s ease;
+  }
+  .player:not(.playing) .cover { transform: scale(.94); }
+  .cover img { width: 100%; height: 100%; object-fit: cover; display: block; }
+  .cover .empty-cover {
+    position: absolute; inset: 0;
+    display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 12px;
+    color: rgba(255,255,255,.75); font-size: 15px; font-weight: 600; text-align: center; padding: 20px;
+    border: 2px dashed rgba(255,255,255,.35); border-radius: 10px;
+  }
+  .cover .empty-cover svg { width: 44px; height: 44px; }
+  .cover.has-image .empty-cover { display: none; }
+  .cover:not(.has-image) img { display: none; }
+
+  .lyric {
+    margin-top: auto;
+    padding-top: 36px;
+    font-size: 21px;
+    font-weight: 700;
+    line-height: 1.3;
+    min-height: 84px;
+    display: flex;
+    align-items: flex-end;
+  }
+
+  /* Title row */
+  .meta {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px;
+    margin-top: 28px;
+  }
+  .meta h1 { font-size: 26px; line-height: 1.15; font-weight: 700; }
+  .meta p { color: var(--muted); font-size: 18px; margin-top: 4px; }
+  .like {
+    flex: none;
+    width: 46px; height: 46px;
+    border-radius: 50%;
+    background: var(--green);
+    display: grid; place-items: center;
+    transition: background .2s, transform .15s;
+  }
+  .like:active { transform: scale(.9); }
+  .like svg { width: 24px; height: 24px; }
+  .like:not(.on) { background: transparent; border: 2px solid var(--muted); }
+  .like:not(.on) svg { display: none; }
+
+  /* Progress */
+  .progress { margin-top: 18px; }
+  .progress input[type=range] {
+    -webkit-appearance: none; appearance: none;
+    width: 100%; height: 20px;
+    background: transparent; cursor: pointer;
+    --pct: 0%;
+  }
+  .progress input[type=range]::-webkit-slider-runnable-track {
+    height: 4px; border-radius: 4px;
+    background: linear-gradient(90deg, #fff var(--pct), var(--track) var(--pct));
+  }
+  .progress input[type=range]::-moz-range-track { height: 4px; border-radius: 4px; background: var(--track); }
+  .progress input[type=range]::-moz-range-progress { height: 4px; border-radius: 4px; background: #fff; }
+  .progress input[type=range]::-webkit-slider-thumb {
+    -webkit-appearance: none;
+    width: 16px; height: 16px; margin-top: -6px;
+    border-radius: 50%; background: #fff; border: 0;
+  }
+  .progress input[type=range]::-moz-range-thumb { width: 16px; height: 16px; border-radius: 50%; background: #fff; border: 0; }
+  .times { display: flex; justify-content: space-between; color: var(--muted); font-size: 15px; margin-top: 4px; font-variant-numeric: tabular-nums; }
+
+  .controls {
+    display: flex; align-items: center; justify-content: space-between;
+    margin-top: 22px;
+  }
+  .controls .icon-btn svg { width: 32px; height: 32px; }
+  .controls .active { color: var(--green); position: relative; }
+  .controls .active::after {
+    content: ""; position: absolute; bottom: 2px; left: 50%;
+    width: 4px; height: 4px; margin-left: -2px; border-radius: 50%; background: var(--green);
+  }
+  .play {
+    width: 82px; height: 82px; border-radius: 50%;
+    background: #fff; color: #000;
+    display: grid; place-items: center;
+    transition: transform .12s;
+  }
+  .play:active { transform: scale(.94); }
+  .play svg { width: 38px; height: 38px; }
+  .play .i-pause { display: none; }
+  .player.playing .play .i-pause { display: block; }
+  .player.playing .play .i-play { display: none; }
+  .dim { color: #8d979e; }
+
+  .extras { display: flex; justify-content: space-between; margin-top: 18px; }
+  .extras .right { display: flex; gap: 12px; }
+  .extras .icon-btn svg { width: 26px; height: 26px; }
+
+  .menu {
+    position: absolute; top: 64px; right: 20px; z-index: 5;
+    background: #2a2f35; border-radius: 12px; padding: 6px;
+    box-shadow: 0 12px 30px rgba(0,0,0,.45);
+    min-width: 240px;
+  }
+  .menu[hidden] { display: none; }
+  .menu button { display: block; width: 100%; text-align: left; padding: 12px 14px; border-radius: 8px; font-size: 15px; }
+  .menu button:hover { background: rgba(255,255,255,.08); }
+  .toast {
+    position: absolute; left: 50%; bottom: 24px; transform: translate(-50%, 20px);
+    background: #fff; color: #111; padding: 10px 16px; border-radius: 10px;
+    font-size: 14px; font-weight: 600; opacity: 0; pointer-events: none;
+    transition: opacity .25s, transform .25s; max-width: 90%; text-align: center; z-index: 6;
+  }
+  .toast.show { opacity: 1; transform: translate(-50%, 0); }
+
+  @media (min-width: 600px) {
+    body { align-items: center; padding: 24px 0; }
+    .player { min-height: 0; height: min(920px, 100dvh - 48px); overflow-y: auto; border-radius: 28px; box-shadow: 0 30px 80px rgba(0,0,0,.6); }
+  }
+  @media (prefers-reduced-motion: reduce) { * { transition: none !important; } }
+</style>
+</head>
+<body>
+
+<main class="player" id="player">
+  <header class="top">
+    <button class="icon-btn" aria-label="Tutup pemutar">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M3 8l9 9 9-9"/></svg>
+    </button>
+    <div class="ctx">Memainkan dari Playlist<b>LuminoX</b></div>
+    <button class="icon-btn" id="menuBtn" aria-label="Menu lainnya" aria-haspopup="true">
+      <svg viewBox="0 0 24 24" fill="currentColor"><circle cx="12" cy="5" r="1.8"/><circle cx="12" cy="12" r="1.8"/><circle cx="12" cy="19" r="1.8"/></svg>
+    </button>
+  </header>
+
+  <div class="menu" id="menu" hidden>
+    <button id="pickBtn">Pilih file musik dari perangkat</button>
+    <button id="coverBtn">Ganti gambar sampul</button>
+    <button id="lyricBtn">Atur teks lirik</button>
+  </div>
+
+  <button class="cover" id="cover" aria-label="Ganti gambar sampul">
+    <img id="coverImg" alt="Sampul album">
+    <span class="empty-cover">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="16" rx="2.5"/><circle cx="9" cy="10" r="1.8"/><path d="M21 16l-5-5-8 9"/></svg>
+      Ketuk untuk memasang gambar sampul
+    </span>
+  </button>
+
+  <p class="lyric" id="lyric" aria-live="polite"></p>
+
+  <section class="meta">
+    <div>
+      <h1 id="title">Masalah Masa Depan</h1>
+      <p id="artist">Hindia</p>
+    </div>
+    <button class="like on" id="like" aria-pressed="true" aria-label="Tersimpan di Koleksi">
+      <svg viewBox="0 0 24 24" fill="none" stroke="#000" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12.5l4.5 4.5L19 7.5"/></svg>
+    </button>
+  </section>
+
+  <section class="progress">
+    <input type="range" id="seek" min="0" max="100" step="0.1" value="0" aria-label="Posisi lagu">
+    <div class="times"><span id="cur">0:00</span><span id="dur">0:00</span></div>
+  </section>
+
+  <section class="controls">
+    <button class="icon-btn" id="shuffle" aria-label="Acak" aria-pressed="false">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 18h3c3 0 4.5-2 6-5s3-5 6-5h3"/><path d="M18 5l3 3-3 3"/><path d="M3 6h3c1.6 0 2.8.6 3.8 1.7"/><path d="M14 16.3c1 1 2.2 1.7 4 1.7h3"/><path d="M18 15l3 3-3 3"/></svg>
+    </button>
+    <button class="icon-btn" id="prev" aria-label="Sebelumnya">
+      <svg viewBox="0 0 24 24" fill="currentColor"><path d="M6 5h2.4v14H6zM20 5v14L9.5 12z"/></svg>
+    </button>
+    <button class="play" id="play" aria-label="Putar">
+      <svg class="i-play" viewBox="0 0 24 24" fill="currentColor"><path d="M8 4.5v15l12-7.5z"/></svg>
+      <svg class="i-pause" viewBox="0 0 24 24" fill="currentColor"><rect x="6" y="4" width="4.2" height="16" rx="1"/><rect x="13.8" y="4" width="4.2" height="16" rx="1"/></svg>
+    </button>
+    <button class="icon-btn" id="next" aria-label="Berikutnya">
+      <svg viewBox="0 0 24 24" fill="currentColor"><path d="M15.6 5H18v14h-2.4zM4 5v14l10.5-7z"/></svg>
+    </button>
+    <button class="icon-btn" id="sleep" aria-label="Pengatur waktu tidur">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="12" cy="13.5" r="7.5"/><path d="M12 13.5V9.5M9.5 3h5M12 3v3"/></svg>
+    </button>
+  </section>
+
+  <section class="extras">
+    <button class="icon-btn" aria-label="Perangkat">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M7 4H4a1 1 0 0 0-1 1v11a1 1 0 0 0 1 1h3"/><rect x="10" y="6" width="10" height="15" rx="2"/><circle cx="15" cy="15" r="2.4"/><circle cx="15" cy="10" r=".6" fill="currentColor"/></svg>
+    </button>
+    <div class="right">
+      <button class="icon-btn" id="share" aria-label="Bagikan">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="18" cy="5" r="2.6"/><circle cx="6" cy="12" r="2.6"/><circle cx="18" cy="19" r="2.6"/><path d="M8.3 10.8l7.4-4.4M8.3 13.2l7.4 4.4"/></svg>
+      </button>
+      <button class="icon-btn" aria-label="Antrean">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="4" y="4" width="16" height="6" rx="2"/><rect x="4" y="14" width="16" height="6" rx="2"/><path d="M2 12h20" stroke-width="0"/></svg>
+      </button>
+    </div>
+  </section>
+
+  <div class="toast" id="toast" role="status"></div>
+  <audio id="audio" preload="metadata"></audio>
+  <input type="file" id="file" accept="audio/*" multiple hidden>
+  <input type="file" id="coverFile" accept="image/*" hidden>
+</main>
+
+<script>
+
+  const playlist = [
+    { title: "Masalah Masa Depan", artist: "Hindia", src: "musik.mp3", lyrics: [] }
+  ];
+
+  const DEFAULT_COVER = "gambar.jpg";
+
+  const $ = id => document.getElementById(id);
+  const player = $("player"), audio = $("audio"), seek = $("seek");
+  let index = 0, shuffle = false, sleepTimer = null, sleepIdx = 0;
+  const sleepSteps = [0, 5, 10, 15, 30];
+
+  const fmt = s => {
+    if (!isFinite(s)) return "0:00";
+    const m = Math.floor(s / 60), r = Math.floor(s % 60);
+    return m + ":" + String(r).padStart(2, "0");
+  };
+
+  let toastT;
+  function toast(msg) {
+    const t = $("toast");
+    t.textContent = msg; t.classList.add("show");
+    clearTimeout(toastT); toastT = setTimeout(() => t.classList.remove("show"), 2800);
+  }
+
+  function load(i, autoplay = false) {
+    index = (i + playlist.length) % playlist.length;
+    const t = playlist[index];
+    $("title").textContent = t.title;
+    $("artist").textContent = t.artist;
+    document.title = t.title + " – " + t.artist;
+    audio.src = t.src;
+    seek.value = 0; setPct(0);
+    $("cur").textContent = "0:00"; $("dur").textContent = "0:00";
+    renderLyric(0);
+    if (autoplay) play();
+  }
+
+  function play() {
+    audio.play().catch(() => {
+      toast("File musik tidak ditemukan. Pilih file lewat menu ⋮");
+      player.classList.remove("playing");
+    });
+  }
+  function toggle() { audio.paused ? play() : audio.pause(); }
+
+  function setPct(p) { seek.style.setProperty("--pct", p + "%"); }
+
+  audio.addEventListener("play", () => { player.classList.add("playing"); $("play").setAttribute("aria-label", "Jeda"); });
+  audio.addEventListener("pause", () => { player.classList.remove("playing"); $("play").setAttribute("aria-label", "Putar"); });
+  audio.addEventListener("loadedmetadata", () => { $("dur").textContent = fmt(audio.duration); });
+  audio.addEventListener("timeupdate", () => {
+    if (!audio.duration) return;
+    const p = (audio.currentTime / audio.duration) * 100;
+    seek.value = p; setPct(p);
+    $("cur").textContent = fmt(audio.currentTime);
+    renderLyric(audio.currentTime);
+  });
+  audio.addEventListener("ended", () => nextTrack());
+
+  seek.addEventListener("input", () => {
+    if (!audio.duration) return;
+    audio.currentTime = (seek.value / 100) * audio.duration;
+    setPct(seek.value);
+  });
+
+  function nextTrack() {
+    if (playlist.length === 1) { audio.currentTime = 0; play(); return; }
+    let n = index + 1;
+    if (shuffle) { do { n = Math.floor(Math.random() * playlist.length); } while (n === index); }
+    load(n, true);
+  }
+  function prevTrack() {
+    if (audio.currentTime > 3 || playlist.length === 1) { audio.currentTime = 0; return; }
+    load(index - 1, true);
+  }
+
+  $("play").onclick = toggle;
+  $("next").onclick = nextTrack;
+  $("prev").onclick = prevTrack;
+
+  $("shuffle").onclick = e => {
+    shuffle = !shuffle;
+    e.currentTarget.classList.toggle("active", shuffle);
+    e.currentTarget.setAttribute("aria-pressed", shuffle);
+    toast(shuffle ? "Acak aktif" : "Acak nonaktif");
+  };
+  $("shuffle").classList.add("active"); shuffle = true; $("shuffle").setAttribute("aria-pressed", "true");
+
+  $("like").onclick = e => {
+    const b = e.currentTarget, on = b.classList.toggle("on");
+    b.setAttribute("aria-pressed", on);
+    toast(on ? "Ditambahkan ke Koleksi" : "Dihapus dari Koleksi");
+  };
+
+  $("sleep").onclick = () => {
+    sleepIdx = (sleepIdx + 1) % sleepSteps.length;
+    clearTimeout(sleepTimer);
+    const m = sleepSteps[sleepIdx];
+    if (m === 0) { toast("Pengatur waktu tidur mati"); return; }
+    sleepTimer = setTimeout(() => { audio.pause(); toast("Musik dihentikan oleh pengatur waktu"); }, m * 60000);
+    toast("Musik berhenti dalam " + m + " menit");
+  };
+
+  $("share").onclick = async () => {
+    const t = playlist[index];
+    if (navigator.share) { try { await navigator.share({ title: t.title, text: t.title + " – " + t.artist, url: location.href }); } catch {} }
+    else toast("Fitur bagikan tidak didukung browser ini");
+  };
+
+  const cover = $("cover"), coverImg = $("coverImg");
+  function setCover(src) {
+    if (!src) { cover.classList.remove("has-image"); return; }
+    coverImg.onload = () => cover.classList.add("has-image");
+    coverImg.onerror = () => cover.classList.remove("has-image");
+    coverImg.src = src;
+  }
+  cover.onclick = () => $("coverFile").click();
+  $("coverBtn").onclick = () => $("coverFile").click();
+  $("coverFile").addEventListener("change", e => {
+    const f = e.target.files[0];
+    if (!f) return;
+    setCover(URL.createObjectURL(f));
+    toast("Gambar sampul dipasang");
+    e.target.value = "";
+  });
+  setCover(DEFAULT_COVER);
+
+  /* Menu */
+  const menu = $("menu");
+  $("menuBtn").onclick = e => { e.stopPropagation(); menu.hidden = !menu.hidden; };
+  document.addEventListener("click", () => menu.hidden = true);
+  $("pickBtn").onclick = () => $("file").click();
+
+  $("file").addEventListener("change", e => {
+    const files = [...e.target.files];
+    if (!files.length) return;
+    const first = playlist.length;
+    files.forEach(f => playlist.push({
+      title: f.name.replace(/\.[^.]+$/, ""),
+      artist: "File lokal",
+      src: URL.createObjectURL(f),
+      lyrics: []
+    }));
+    if (playlist[0].src === "musik.mp3" && audio.paused) { playlist.splice(0, 1); load(0, true); }
+    else load(first - (playlist[0].src === "musik.mp3" ? 0 : 0), true);
+    toast(files.length + " lagu ditambahkan");
+  });
+
+  $("lyricBtn").onclick = () => {
+    const cur = playlist[index].lyrics.map(l => fmt(l.t).padStart(4, "0") + " " + l.text).join("\n");
+    const input = prompt("Tempel lirik dengan format per baris:\nmm:ss teks lirik\n\nContoh:\n0:11 baris pertama\n0:18 baris kedua", cur);
+    if (input === null) return;
+    playlist[index].lyrics = input.split("\n").map(line => {
+      const m = line.match(/^\s*(\d+):(\d{2})\s+(.*)$/);
+      return m ? { t: (+m[1]) * 60 + (+m[2]), text: m[3] } : null;
+    }).filter(Boolean).sort((a, b) => a.t - b.t);
+    renderLyric(audio.currentTime);
+    toast(playlist[index].lyrics.length ? "Lirik disimpan" : "Lirik dikosongkan");
+  };
+
+  function renderLyric(time) {
+    const ly = playlist[index].lyrics, el = $("lyric");
+    if (!ly.length) { el.textContent = ""; return; }
+    let i = -1;
+    for (let k = 0; k < ly.length; k++) if (ly[k].t <= time) i = k;
+    el.textContent = i >= 0 ? ly[i].text : "";
+  }
+
+  document.addEventListener("keydown", e => {
+    if (e.code === "Space" && !["BUTTON", "INPUT"].includes(document.activeElement.tagName)) { e.preventDefault(); toggle(); }
+  });
+
+  load(0);
+</script>
+</body>
+</html>
